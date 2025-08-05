@@ -1,8 +1,14 @@
 import { defineConfig } from 'vite';
+import path from 'path'; // ✅ Importamos path para usar alias
 import dts from 'vite-plugin-dts';
 import svgr from 'vite-plugin-svgr';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'), // ✅ Alias para "@/..."
+    },
+  },
   build: {
     lib: {
       entry: './src/index.ts',
