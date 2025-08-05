@@ -1,101 +1,55 @@
 # 🪙 Solana Standard Wallet Adapter
 
-**⚠️ This project is under active development and not yet production-ready.**  
-This modular wallet adapter is being developed for [Deside](https://deside.app)
+Modular wallet adapter for Solana built on Wallet Standard — supports Phantom, Backpack, Magic Eden, and Solflare.  
+Developed by [Deside](https://deside.app).
 
 ---
 
 ## 🚀 Features
 
-- 🔌 Unified wallet connection: Phantom, Backpack, Magic Eden, Solflare
-- 🧩 Modular adapter structure (easy to extend)
-- 🔐 Silent auto-reconnect using `onlyIfTrusted: true`
-- 🧠 Global wallet state management (`WalletProvider` + `useWallet()` hook)
-- 🖼️ UI-ready components: `WalletList`, `WalletModal`, `WalletButton`
+- Unified connection across major Solana wallets
+- Auto-reconnect using `onlyIfTrusted`
+- Global state with `WalletProvider` and `useWallet`
+- Plug-and-play UI components
 
 ---
 
 ## 📦 Installation
 
 ```bash
-# Local usage during development
 npm install ../path/to/solana-standard-wallet
 ```
 
 ---
 
-## 🛠️ Usage
-
-### 1. Wrap your app
+## ⚙️ Quick Usage
 
 ```tsx
-import { WalletProvider } from 'solana-standard-wallet';
+import { WalletProvider, useWallet } from 'solana-standard-wallet';
 
 <WalletProvider>
   <App />
 </WalletProvider>
-```
 
-### 2. Use the wallet hook
-
-```tsx
-import { useWallet } from 'solana-standard-wallet';
-
-const { connect, disconnect, publicKey, connected, signMessage, status } = useWallet();
+const { connect, disconnect, publicKey } = useWallet();
 ```
 
 ---
 
-## 🧱 Components
-
-### `WalletButton`
+## 🧩 Components
 
 ```tsx
 import { WalletButton } from 'solana-standard-wallet/components/WalletButton';
-
-<WalletButton />
-```
-
-### `WalletModal`
-
-```tsx
 import { WalletModal } from 'solana-standard-wallet/components/WalletModal';
-
-<WalletModal isOpen={true} onClose={() => {}} />
-```
-
-### `WalletList`
-
-```tsx
 import { WalletList } from 'solana-standard-wallet/components/WalletList';
-
-<WalletList />
 ```
 
 ---
 
-## 📁 Project Structure
-
-```bash
-src/
-├── adapters/          # Individual wallet adapters (Phantom, Backpack, etc.)
-├── assets/icons/      # Base64 and SVG wallet icons
-├── components/        # WalletList, WalletModal, WalletButton
-├── contexts/          # WalletProvider and useWallet()
-├── utils/             # AdapterManager and helpers
-└── index.ts           # SDK entry point with all exports
-```
-
----
-
-## 🧩 Adding New Wallets
-
-Create a new adapter by extending `BaseWalletAdapter`:
+## ➕ Add Your Wallet
 
 ```ts
-import { BaseWalletAdapter } from './adapters/BaseWalletAdapter';
-
-export class NewWalletAdapter extends BaseWalletAdapter {
+class NewWalletAdapter extends BaseWalletAdapter {
   constructor() {
     super({
       name: 'NewWallet',
@@ -106,14 +60,6 @@ export class NewWalletAdapter extends BaseWalletAdapter {
   }
 }
 ```
-
----
-
-## 📌 Project Status
-
-> This SDK is under active development.  
-> It is fully functional and used internally at Deside, but **its API and structure may still change**.  
-> Not yet recommended for general production use or NPM publishing.
 
 ---
 
