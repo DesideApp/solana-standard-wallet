@@ -1,26 +1,25 @@
-# Solana Standard Wallet Adapter
+# 🪙 Solana Standard Wallet Adapter
 
 **⚠️ This project is under active development and not yet production-ready.**  
-This modular adapter is being developed for [Deside](https://deside.app) and is inspired by Jupiter's Unified Wallet Kit.
+This modular wallet adapter is being developed for [Deside](https://deside.app) and is inspired by Jupiter's Unified Wallet Kit.
 
 ---
 
 ## 🚀 Features
 
-- 🔌 Unified wallet connection: Phantom, Backpack, MagicEden, Solflare
+- 🔌 Unified wallet connection: Phantom, Backpack, Magic Eden, Solflare
 - 🧩 Modular adapter structure (easy to extend)
 - 🔐 Silent auto-reconnect using `onlyIfTrusted: true`
-- 🧠 Global state management via `WalletProvider` and `useWallet()` hook
-- 📋 Plug-and-play `WalletList` component for UI integration
+- 🧠 Global wallet state management (`WalletProvider` + `useWallet()` hook)
+- 🖼️ UI-ready components: `WalletList`, `WalletModal`, `WalletButton`
 
 ---
 
 ## 📦 Installation
 
 ```bash
-npm install solana-standard-wallet
-# or if you're using it locally:
-pnpm add ../path/to/this-repo
+# Local usage during development
+npm install ../path/to/solana-standard-wallet
 ```
 
 ---
@@ -29,7 +28,7 @@ pnpm add ../path/to/this-repo
 
 ### 1. Wrap your app
 
-```jsx
+```tsx
 import { WalletProvider } from 'solana-standard-wallet';
 
 <WalletProvider>
@@ -39,7 +38,7 @@ import { WalletProvider } from 'solana-standard-wallet';
 
 ### 2. Use the wallet hook
 
-```jsx
+```tsx
 import { useWallet } from 'solana-standard-wallet';
 
 const { connect, disconnect, publicKey, connected, signMessage, status } = useWallet();
@@ -49,11 +48,25 @@ const { connect, disconnect, publicKey, connected, signMessage, status } = useWa
 
 ## 🧱 Components
 
+### `WalletButton`
+
+```tsx
+import { WalletButton } from 'solana-standard-wallet/components/WalletButton';
+
+<WalletButton />
+```
+
+### `WalletModal`
+
+```tsx
+import { WalletModal } from 'solana-standard-wallet/components/WalletModal';
+
+<WalletModal isOpen={true} onClose={() => {}} />
+```
+
 ### `WalletList`
 
-Renders trusted (previously authorized) wallets and all others. Allows connect-on-click.
-
-```jsx
+```tsx
 import { WalletList } from 'solana-standard-wallet/components/WalletList';
 
 <WalletList />
@@ -66,10 +79,11 @@ import { WalletList } from 'solana-standard-wallet/components/WalletList';
 ```bash
 src/
 ├── adapters/          # Individual wallet adapters (Phantom, Backpack, etc.)
-├── components/        # UI components: WalletList, WalletButton (coming soon)
+├── assets/icons/      # Base64 and SVG wallet icons
+├── components/        # WalletList, WalletModal, WalletButton
 ├── contexts/          # WalletProvider and useWallet()
-├── utils/             # getTrustedAdapters(), helpers
-└── index.js           # Entry point of the SDK
+├── utils/             # AdapterManager and helpers
+└── index.ts           # SDK entry point with all exports
 ```
 
 ---
@@ -78,13 +92,15 @@ src/
 
 Create a new adapter by extending `BaseWalletAdapter`:
 
-```js
+```ts
+import { BaseWalletAdapter } from './adapters/BaseWalletAdapter';
+
 export class NewWalletAdapter extends BaseWalletAdapter {
   constructor() {
     super({
       name: 'NewWallet',
-      icon: 'https://...',
-      url: 'https://...',
+      icon: 'data:image/svg+xml;base64,...',
+      chains: ['solana:mainnet'],
       provider: window?.newwallet,
     });
   }

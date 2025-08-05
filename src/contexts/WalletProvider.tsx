@@ -13,7 +13,7 @@ import { MagicEdenAdapter } from '../adapters/MagicEdenAdapter.js';
 import { SolflareAdapter } from '../adapters/SolflareAdapter.js';
 import type { BaseWalletAdapter } from '../adapters/BaseWalletAdapter.js';
 
-// 🔠 Tipos del contexto
+// Context types
 type WalletStatus = 'idle' | 'connecting' | 'connected' | 'locked' | 'error';
 
 interface WalletContextType {
@@ -27,10 +27,10 @@ interface WalletContextType {
   availableWallets: string[];
 }
 
-// 🧠 Contexto tipado
+// Typed context
 const WalletContext = createContext<WalletContextType | null>(null);
 
-// 💼 Adaptadores registrados
+// 💼 Registered adapters
 const ADAPTERS: BaseWalletAdapter[] = [
   new PhantomAdapter(),
   new BackpackAdapter(),
@@ -38,12 +38,13 @@ const ADAPTERS: BaseWalletAdapter[] = [
   new SolflareAdapter(),
 ];
 
-// 🧩 Proveedor principal
+// Main provider
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [adapter, setAdapter] = useState<BaseWalletAdapter | null>(null);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<WalletStatus>('idle');
+  const [availableWallets, setAvailableWallets] = useState<BaseWalletAdapter[]>([]);
 
   const connect = useCallback(async (walletName: string) => {
     const selected = ADAPTERS.find((a) => a.name === walletName && a.available);
@@ -53,6 +54,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       setStatus('connecting');
       await selected.connect();
 
+      localStorage.setItem('lastConnectedWallet', walletName);
       setAdapter(selected);
       setPublicKey(selected.publicKey);
       setConnected(true);
@@ -71,6 +73,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (!adapter) return;
 
     await adapter.disconnect();
+    localStorage.removeItem('lastConnectedWallet');
     setPublicKey(null);
     setConnected(false);
     setAdapter(null);
@@ -84,6 +87,26 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     },
     [adapter]
   );
+
+  // Dynamic sync with readyStateChange
+  const detectAvailableWallets = useCallback(async () => {
+    for (const a of ADAPTERS) {
+      const trusted = await a.isUnlocked?.();
+      if (trusted) {
+        setAvailableWallets((prev) =>
+          prev.some((w) => w.name === a.name) ? prev : [...prev, a]
+        );
+      }
+
+      a.on?.('readyStateChange', async () => {
+        const updated = await a.isUnlocked?.();
+        setAvailableWallets((prev) => {
+          const filtered = prev.filter((w) => w.name !== a.name);
+          return updated ? [...filtered, a] : filtered;
+        });
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!adapter) return;
@@ -102,7 +125,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const autoReconnect = async () => {
       if (adapter || connected) return;
 
-      for (const a of ADAPTERS) {
+      const lastUsed = localStorage.getItem('lastConnectedWallet');
+      const candidates = lastUsed
+        ? ADAPTERS.filter((a) => a.name === lastUsed)
+        : ADAPTERS;
+
+      for (const a of candidates) {
         const trusted = await a.isUnlocked?.();
         if (trusted) {
           try {
@@ -120,7 +148,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     };
 
     autoReconnect();
-  }, [adapter, connected]);
+    detectAvailableWallets();
+  }, [adapter, connected, detectAvailableWallets]);
 
   return (
     <WalletContext.Provider
@@ -132,7 +161,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         connect,
         disconnect,
         signMessage,
-        availableWallets: ADAPTERS.filter((a) => a.available).map((a) => a.name),
+        availableWallets: availableWallets.map((w) => w.name),
       }}
     >
       {children}
@@ -140,7 +169,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// 🪝 Hook personalizado para acceder al contexto
+// Custom hook to access the context
 export const useWallet = (): WalletContextType => {
   const ctx = useContext(WalletContext);
   if (!ctx) throw new Error('useWallet must be used inside WalletProvider');

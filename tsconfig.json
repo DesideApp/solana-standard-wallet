@@ -5,6 +5,7 @@
     "moduleResolution": "Bundler",
     "lib": ["DOM", "ES2022"],
     "declaration": true,
+    "emitDeclarationOnly": true,
     "declarationDir": "./dist",
     "outDir": "./dist",
     "esModuleInterop": true,
@@ -14,9 +15,10 @@
     "skipLibCheck": true,
     "strict": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",                            // 👈 añadido para alias
+    "moduleDetection": "force",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]                         // 👈 soporte para @/
+      "@/*": ["src/*"]
     }
   },
   "include": ["src"],

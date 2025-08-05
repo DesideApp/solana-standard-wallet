@@ -10,12 +10,19 @@ export default defineConfig({
       fileName: 'solana-standard-wallet',
       formats: ['es'],
     },
+    sourcemap: true,
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: [
+        'react',
+        'react-dom',
+        '@solana/wallet-standard-features',
+        '@wallet-standard/core',
+        '@wallet-standard/features',
+        'bs58',
+      ],
     },
   },
   plugins: [
-    // 🧠 SVGR solo se activa cuando NO hay ?url
     svgr({
       exportAsDefault: false,
       include: '**/*.svg',

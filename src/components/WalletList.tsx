@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getTrustedAdapters } from '../utils/getTrustedAdapters.js';
 import { useWallet } from '../contexts/WalletProvider.js';
 import type { BaseWalletAdapter } from '../adapters/BaseWalletAdapter';
 import { walletIcons } from '../assets/icons';
+import { AdapterManager } from '../utils/AdapterManager.js';
 
 export const WalletList = () => {
   const [trusted, setTrusted] = useState<BaseWalletAdapter[]>([]);
@@ -11,15 +11,13 @@ export const WalletList = () => {
   const { connect, status, connected, publicKey } = useWallet();
 
   useEffect(() => {
-    const detect = async () => {
-      setLoading(true);
-      const { trusted, untrusted } = await getTrustedAdapters();
-      setTrusted(trusted);
-      setUntrusted(untrusted);
+    const manager = new AdapterManager((newTrusted, newUntrusted) => {
+      setTrusted(newTrusted);
+      setUntrusted(newUntrusted);
       setLoading(false);
-    };
+    });
 
-    detect();
+    return () => manager.dispose();
   }, []);
 
   const handleConnect = async (name: string) => {
@@ -46,7 +44,7 @@ export const WalletList = () => {
         <>
           {trusted.length > 0 && (
             <>
-              <h3>Connected Wallets</h3>
+              <h3>Installed Wallets</h3>
               <ul>
                 {trusted.map((adapter) => {
                   const Icon = walletIcons[adapter.name];
@@ -65,7 +63,7 @@ export const WalletList = () => {
 
           {untrusted.length > 0 && (
             <>
-              <h3>Other Wallets</h3>
+              <h3>Detected Wallets</h3>
               <ul>
                 {untrusted.map((adapter) => {
                   const Icon = walletIcons[adapter.name];

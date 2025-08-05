@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "description": "Modular wallet adapter for Solana using Wallet Standard. Includes Phantom, Backpack, MagicEden and Solflare support.",
   "main": "./dist/solana-standard-wallet.js",
-  "types": "./dist/index.d.ts",
   "module": "./dist/solana-standard-wallet.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": "./dist/solana-standard-wallet.js",
     "./components/WalletList": "./dist/components/WalletList.js"
   },
+  "files": ["dist"],
+  "sideEffects": false,
   "scripts": {
     "dev": "vite",
     "build": "vite build",

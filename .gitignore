@@ -1,5 +1,26 @@
-node_modules
+# 🔧 Dependencias y builds
+node_modules/
 dist/
 .vite/
 .pnpm/
+
+# 💅 Editor y sistema
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# 🌐 Entornos
 .env
+.env.*.local
+
+# 🧪 Coverage (si haces tests en futuro)
+coverage/
+
+# 🗑️ Archivos temporales de sistema
+*.tmp
+*.swp
+*.swo
+
+# 🪶 TypeScript cache
+tsconfig.tsbuildinfo

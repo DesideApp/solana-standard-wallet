@@ -1,8 +1,9 @@
 import type { Wallet, WalletAccount, WalletIcon } from '@wallet-standard/core';
-import type {
-  SolanaSignMessageFeature,
-  SolanaSignMessageInput,
-  SolanaSignMessageOutput,
+import {
+  SolanaSignMessage,
+  type SolanaSignMessageFeature,
+  type SolanaSignMessageInput,
+  type SolanaSignMessageOutput
 } from '@solana/wallet-standard-features';
 import bs58 from 'bs58';
 
@@ -24,7 +25,7 @@ export interface WalletProviderInterface {
   on?: (event: string, cb: (arg: any) => void) => void;
 }
 
-type WalletEvent = 'connect' | 'disconnect' | 'accountChanged';
+type WalletEvent = 'connect' | 'disconnect' | 'accountChanged' | 'readyStateChange';
 
 type WalletListeners = {
   [K in WalletEvent]: Array<(payload: any) => void>;
@@ -54,10 +55,12 @@ export class BaseWalletAdapter {
       connect: [],
       disconnect: [],
       accountChanged: [],
+      readyStateChange: [], // ✅ Añadido
     };
 
     if (this.provider) {
       this.bindAccountChange();
+      this.bindReadyStateChange(); // ✅ Nuevo binding
     }
   }
 
@@ -133,17 +136,44 @@ export class BaseWalletAdapter {
     });
   }
 
+  protected bindReadyStateChange(): void {
+    if (!this.provider?.on) return;
+
+    this.provider.on('readyStateChange', (state: any) => {
+      this.emit('readyStateChange', state);
+    });
+  }
+
   get wallet(): Wallet & SolanaSignMessageFeature {
     const accounts: WalletAccount[] = this.publicKey
       ? [
           {
             address: this.publicKey,
             publicKey: bs58.decode(this.publicKey),
-            chains: this.chains as `${string}:${string}`[],
+            chains: this.chains,
             features: ['solana:signMessage'],
           },
         ]
       : [];
+
+    const signMessageFeature: SolanaSignMessageFeature[typeof SolanaSignMessage] = {
+      version: '1.1.0',
+      signMessage: async (
+        ...inputs: readonly SolanaSignMessageInput[]
+      ): Promise<readonly SolanaSignMessageOutput[]> => {
+        return Promise.all(
+          inputs.map(async ({ message }) => {
+            const signed = await this.provider!.signMessage!(message, 'utf8');
+            const signature = 'signature' in signed ? signed.signature : signed;
+            return {
+              signedMessage: message,
+              signature,
+              signatureType: 'ed25519',
+            };
+          })
+        );
+      },
+    };
 
     return {
       version: '1.0.0',
@@ -152,25 +182,9 @@ export class BaseWalletAdapter {
       chains: this.chains,
       accounts,
       features: {
-        'solana:signMessage': {
-          version: '1.1.0',
-          signMessage: async (
-            inputs: readonly SolanaSignMessageInput[]
-          ): Promise<readonly SolanaSignMessageOutput[]> => {
-            return Promise.all(
-              inputs.map(async ({ message }) => {
-                const signed = await this.provider!.signMessage!(message, 'utf8');
-                const signature = 'signature' in signed ? signed.signature : signed;
-                return {
-                  signedMessage: message,
-                  signature,
-                  signatureType: 'ed25519',
-                };
-              })
-            );
-          },
-        },
+        'solana:signMessage': signMessageFeature,
       },
+      [SolanaSignMessage]: signMessageFeature,
     };
   }
 }
