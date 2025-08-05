@@ -16,6 +16,7 @@ export class MagicEdenAdapter extends BaseWalletAdapter {
     super({
       name: 'Magic Eden Wallet',
       icon: magicEdenIcon,
+      url: 'https://magiceden.io',
       chains: ['solana:mainnet'],
       provider,
     } satisfies WalletAdapterOptions);

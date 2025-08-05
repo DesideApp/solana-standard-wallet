@@ -16,6 +16,7 @@ export class SolflareAdapter extends BaseWalletAdapter {
     super({
       name: 'Solflare',
       icon: solflareIcon,
+      url: 'https://solflare.com',
       chains: ['solana:mainnet'],
       provider,
     } satisfies WalletAdapterOptions);

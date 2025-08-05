@@ -13,6 +13,7 @@ export class PhantomAdapter extends BaseWalletAdapter {
     super({
       name: 'Phantom',
       icon: phantomIcon,
+      url: 'https://phantom.app',
       chains: ['solana:mainnet'],
       provider,
     } satisfies WalletAdapterOptions);

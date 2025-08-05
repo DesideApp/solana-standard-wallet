@@ -16,6 +16,7 @@ export class BackpackAdapter extends BaseWalletAdapter {
     super({
       name: 'Backpack',
       icon: backpackIcon,
+      url: 'https://backpack.app',
       chains: ['solana:mainnet'],
       provider,
     } satisfies WalletAdapterOptions);

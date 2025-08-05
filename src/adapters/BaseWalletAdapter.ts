@@ -10,6 +10,7 @@ import bs58 from 'bs58';
 export interface WalletAdapterOptions {
   name: string;
   icon: WalletIcon;
+  url?: string;
   chains: `${string}:${string}`[];
   provider: WalletProviderInterface | null;
 }
@@ -169,6 +170,7 @@ export class BaseWalletAdapter {
               signedMessage: message,
               signature,
               signatureType: 'ed25519',
+              publicKey: bs58.decode(this.publicKey!),
             };
           })
         );
