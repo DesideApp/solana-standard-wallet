@@ -1,7 +1,7 @@
 # 🪙 Solana Standard Wallet Adapter
 
 **⚠️ This project is under active development and not yet production-ready.**  
-This modular wallet adapter is being developed for [Deside](https://deside.app) and is inspired by Jupiter's Unified Wallet Kit.
+This modular wallet adapter is being developed for [Deside](https://deside.app)
 
 ---
 
