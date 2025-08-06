@@ -1,12 +1,12 @@
 import { defineConfig } from 'vite';
-import path from 'path'; // ✅ Importamos path para usar alias
+import path from 'path';
 import dts from 'vite-plugin-dts';
 import svgr from 'vite-plugin-svgr';
 
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'), // ✅ Alias para "@/..."
+      '@': path.resolve(__dirname, './src'),
     },
   },
   build: {
@@ -21,10 +21,7 @@ export default defineConfig({
       external: [
         'react',
         'react-dom',
-        '@solana/wallet-standard-features',
-        '@wallet-standard/core',
-        '@wallet-standard/features',
-        'bs58',
+        'react/jsx-runtime'
       ],
     },
   },

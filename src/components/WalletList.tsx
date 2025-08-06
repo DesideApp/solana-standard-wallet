@@ -1,24 +1,54 @@
 import { useEffect, useState } from 'react';
-import { useWallet } from '../contexts/WalletProvider.js';
-import type { BaseWalletAdapter } from '../adapters/BaseWalletAdapter';
+import { useWallet } from '../contexts/WalletProvider';
 import { walletIcons } from '../assets/icons';
-import { AdapterManager } from '../utils/AdapterManager.js';
+import { useStandardWallets } from '../hooks/useStandardWallets';
+import type { Wallet } from '@wallet-standard/core';
+import {
+  SolanaSignMessage,
+  type SolanaSignMessageFeature,
+  type SolanaSignMessageInput,
+} from '@solana/wallet-standard-features';
 
 export const WalletList = () => {
-  const [trusted, setTrusted] = useState<BaseWalletAdapter[]>([]);
-  const [untrusted, setUntrusted] = useState<BaseWalletAdapter[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const { connect, status, connected, publicKey } = useWallet();
+  const allWallets = useStandardWallets();
+  const [trusted, setTrusted] = useState<Wallet[]>([]);
+  const [untrusted, setUntrusted] = useState<Wallet[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const manager = new AdapterManager((newTrusted, newUntrusted) => {
-      setTrusted(newTrusted);
-      setUntrusted(newUntrusted);
-      setLoading(false);
-    });
+    const checkTrusted = async () => {
+      const results = await Promise.all(
+        allWallets.map(async (wallet) => {
+          const feature = wallet.features[SolanaSignMessage] as
+            | SolanaSignMessageFeature[typeof SolanaSignMessage]
+            | undefined;
 
-    return () => manager.dispose();
-  }, []);
+          const account = wallet.accounts[0];
+          if (!account || !feature?.signMessage) {
+            return { wallet, trusted: false };
+          }
+
+          try {
+            const input: SolanaSignMessageInput = {
+              account,
+              message: new Uint8Array([0]),
+            };
+            await feature.signMessage(input);
+            return { wallet, trusted: true };
+          } catch {
+            return { wallet, trusted: false };
+          }
+        })
+      );
+
+      setTrusted(results.filter((r) => r.trusted).map((r) => r.wallet));
+      setUntrusted(results.filter((r) => !r.trusted).map((r) => r.wallet));
+      setLoading(false);
+    };
+
+    checkTrusted();
+  }, [allWallets]);
 
   const handleConnect = async (name: string) => {
     try {
@@ -46,13 +76,13 @@ export const WalletList = () => {
             <>
               <h3>Installed Wallets</h3>
               <ul>
-                {trusted.map((adapter) => {
-                  const Icon = walletIcons[adapter.name];
+                {trusted.map((wallet) => {
+                  const Icon = walletIcons[wallet.name];
                   return (
-                    <li key={adapter.name}>
-                      <button onClick={() => handleConnect(adapter.name)}>
+                    <li key={wallet.accounts[0]?.address ?? wallet.name}>
+                      <button onClick={() => handleConnect(wallet.name)}>
                         {Icon && <Icon width={20} height={20} style={{ marginRight: 8 }} />}
-                        {adapter.name}
+                        {wallet.name}
                       </button>
                     </li>
                   );
@@ -65,13 +95,13 @@ export const WalletList = () => {
             <>
               <h3>Detected Wallets</h3>
               <ul>
-                {untrusted.map((adapter) => {
-                  const Icon = walletIcons[adapter.name];
+                {untrusted.map((wallet) => {
+                  const Icon = walletIcons[wallet.name];
                   return (
-                    <li key={adapter.name}>
-                      <button onClick={() => handleConnect(adapter.name)}>
+                    <li key={wallet.accounts[0]?.address ?? wallet.name}>
+                      <button onClick={() => handleConnect(wallet.name)}>
                         {Icon && <Icon width={20} height={20} style={{ marginRight: 8 }} />}
-                        {adapter.name}
+                        {wallet.name}
                       </button>
                     </li>
                   );

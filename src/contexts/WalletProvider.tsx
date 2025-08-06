@@ -24,7 +24,7 @@ interface WalletContextType {
   connect: (walletName: string) => Promise<void>;
   disconnect: () => Promise<void>;
   signMessage: (message: string) => Promise<string>;
-  availableWallets: string[];
+  availableWallets: string[]; // only names exposed
 }
 
 // Typed context
@@ -88,10 +88,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     [adapter]
   );
 
-  // Dynamic sync with readyStateChange
+  // ✅ Usa getTrustedStatus para detectar wallets disponibles dinámicamente
   const detectAvailableWallets = useCallback(async () => {
     for (const a of ADAPTERS) {
-      const trusted = await a.isUnlocked?.();
+      const trusted = await a.getTrustedStatus();
+
       if (trusted) {
         setAvailableWallets((prev) =>
           prev.some((w) => w.name === a.name) ? prev : [...prev, a]
@@ -99,7 +100,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       }
 
       a.on?.('readyStateChange', async () => {
-        const updated = await a.isUnlocked?.();
+        const updated = await a.getTrustedStatus();
         setAvailableWallets((prev) => {
           const filtered = prev.filter((w) => w.name !== a.name);
           return updated ? [...filtered, a] : filtered;
@@ -108,6 +109,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // 🎯 Listener de cambio de cuenta
   useEffect(() => {
     if (!adapter) return;
 
@@ -121,6 +123,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     return () => adapter.off('accountChanged', onAccountChange);
   }, [adapter]);
 
+  // 🔁 Auto reconexión + detección de wallets disponibles
   useEffect(() => {
     const autoReconnect = async () => {
       if (adapter || connected) return;
@@ -131,7 +134,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         : ADAPTERS;
 
       for (const a of candidates) {
-        const trusted = await a.isUnlocked?.();
+        const trusted = await a.getTrustedStatus();
         if (trusted) {
           try {
             await a.connect();
@@ -169,7 +172,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Custom hook to access the context
+// Hook personalizado para acceder al contexto
 export const useWallet = (): WalletContextType => {
   const ctx = useContext(WalletContext);
   if (!ctx) throw new Error('useWallet must be used inside WalletProvider');

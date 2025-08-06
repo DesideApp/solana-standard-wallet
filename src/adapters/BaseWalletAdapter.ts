@@ -39,7 +39,6 @@ export class BaseWalletAdapter {
   provider: WalletProviderInterface | null;
   publicKey: string | null;
   connected: boolean;
-  available: boolean;
   listeners: WalletListeners;
 
   constructor({ name, icon, chains, provider }: WalletAdapterOptions) {
@@ -50,26 +49,53 @@ export class BaseWalletAdapter {
 
     this.publicKey = null;
     this.connected = false;
-    this.available = !!provider;
 
     this.listeners = {
       connect: [],
       disconnect: [],
       accountChanged: [],
-      readyStateChange: [], // ✅ Añadido
+      readyStateChange: [],
     };
 
     if (this.provider) {
       this.bindAccountChange();
-      this.bindReadyStateChange(); // ✅ Nuevo binding
+      this.bindReadyStateChange();
     }
+  }
+
+  /** ✅ Método oficial para comprobar si está desbloqueado (trusted) */
+  async isUnlocked(): Promise<boolean> {
+    try {
+      if (!this.provider?.connect) return false;
+      await this.provider.connect({ onlyIfTrusted: true });
+      const pk = this.provider.publicKey?.toString();
+      return !!pk;
+    } catch {
+      return false;
+    }
+  }
+
+  /** ✅ Getter instantáneo: sólo indica si hay provider */
+  get available(): boolean {
+    return !!this.provider;
+  }
+
+  /** ✅ Opcional: útil si quieres precargar isUnlocked al inicio */
+  async getTrustedStatus(): Promise<boolean> {
+    const trusted = await this.isUnlocked();
+    this.connected = trusted;
+    this.publicKey = trusted ? this.provider?.publicKey?.toString() || null : null;
+    return trusted;
+  }
+
+  isReady(): boolean {
+    return this.available;
   }
 
   async connect(): Promise<string | null> {
     if (!this.provider) throw new Error(`${this.name} provider not available`);
 
     await this.provider.connect?.();
-
     this.publicKey = this.provider.publicKey?.toString() || null;
     this.connected = !!this.publicKey;
 
@@ -79,8 +105,8 @@ export class BaseWalletAdapter {
 
   async disconnect(): Promise<void> {
     if (!this.provider?.disconnect) return;
-
     await this.provider.disconnect();
+
     this.publicKey = null;
     this.connected = false;
 
@@ -99,22 +125,6 @@ export class BaseWalletAdapter {
     return bs58.encode(signature);
   }
 
-  async isUnlocked(): Promise<boolean> {
-    try {
-      if (!this.provider?.connect) return false;
-
-      await this.provider.connect({ onlyIfTrusted: true });
-      const pk = this.provider.publicKey?.toString();
-      return !!pk;
-    } catch {
-      return false;
-    }
-  }
-
-  isReady(): boolean {
-    return !!this.provider;
-  }
-
   on(event: WalletEvent, callback: (payload: any) => void): void {
     this.listeners[event].push(callback);
   }
@@ -128,9 +138,7 @@ export class BaseWalletAdapter {
   }
 
   protected bindAccountChange(): void {
-    if (!this.provider?.on) return;
-
-    this.provider.on('accountChanged', (newPubkey: string) => {
+    this.provider?.on?.('accountChanged', (newPubkey: string) => {
       this.publicKey = newPubkey?.toString() || null;
       this.connected = !!this.publicKey;
       this.emit('accountChanged', this.publicKey);
@@ -138,9 +146,7 @@ export class BaseWalletAdapter {
   }
 
   protected bindReadyStateChange(): void {
-    if (!this.provider?.on) return;
-
-    this.provider.on('readyStateChange', (state: any) => {
+    this.provider?.on?.('readyStateChange', (state: any) => {
       this.emit('readyStateChange', state);
     });
   }

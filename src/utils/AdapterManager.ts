@@ -61,4 +61,9 @@ export class AdapterManager {
   dispose() {
     this.listeners.forEach((off) => off());
   }
+
+  // ✅ Este es el método público que querías
+  getTrustedAdapters(): BaseWalletAdapter[] {
+    return this.trusted;
+  }
 }
